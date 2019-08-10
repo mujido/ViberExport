@@ -25,9 +25,10 @@ DIRECTION_IN = 1
 
 def dumpDB(db, writer):
 	results = db.execute('''SELECT e.Timestamp, Direction, Name, Number, Body 
-							FROM Messages m, Events e, Contact c
-							WHERE m.EventID = e.EventID
-							AND   c.ContactID = e.ContactID''')
+							FROM Events e
+							INNER JOIN Messages m ON m.EventID = e.EventID
+							INNER JOIN Contact c ON c.ContactID = e.ContactID
+							ORDER BY SortOrder''')
 	for row in results:
 		(timestamp, direction, name, number, body) = row
 		timestamp /= 1000
