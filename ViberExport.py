@@ -23,12 +23,15 @@ from datetime import datetime
 DIRECTION_OUT = 0
 DIRECTION_IN = 1
 
-def dumpDB(db, writer):
+dialect = csv.excel_tab()
+
+def dumpChatID(db, chat_id, writer):
 	results = db.execute('''SELECT e.Timestamp, Direction, Name, Number, Body 
 							FROM Events e
 							INNER JOIN Messages m ON m.EventID = e.EventID
 							INNER JOIN Contact c ON c.ContactID = e.ContactID
-							ORDER BY SortOrder''')
+							WHERE e.ChatID = ?
+							ORDER BY SortOrder''', [chat_id])
 	for row in results:
 		(timestamp, direction, name, number, body) = row
 		timestamp /= 1000
@@ -41,11 +44,16 @@ def dumpDB(db, writer):
 			name_from = name
 		writer.writerow((msgdate, msgtime, name_from, number, body))
 
+def dumpDB(db):
+	results = db.execute('''SELECT ChatID FROM ChatInfo''')
+	for (chat_id,) in results:
+		with open(f"chat_{chat_id}.csv", "w") as out:
+			writer = csv.writer(out, dialect=dialect)
+			dumpChatID(db, chat_id, writer)
+
 def dumpMessages(dbFile):
-	dialect = csv.excel_tab()
-	writer = csv.writer(sys.stdout, dialect=dialect)
 	with sqlite3.connect(dbFile) as db:
-		dumpDB(db, writer)
+		dumpDB(db)
 
 def main(argv):
 	dumpMessages(argv[1])
